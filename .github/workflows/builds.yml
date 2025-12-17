@@ -7,7 +7,7 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 120
     env:
-      # Define o triplet padrão via variável de ambiente (substitui o input antigo)
+      # Define o triplet padrão via variável de ambiente (obrigatório para run-vcpkg@v11)
       VCPKG_DEFAULT_TRIPLET: x64-windows-static
 
     steps:
@@ -19,20 +19,22 @@ jobs:
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+    # SUBSTITUIÇÃO CRUCIAL: setup-msbuild -> msvc-dev-cmd
+    # Isso coloca o cl.exe e link.exe no PATH, permitindo que o Vcpkg compile o GLEW com Ninja
+    - name: Setup MSVC Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
 
     - name: Run vcpkg (Manifest Mode)
       uses: lukka/run-vcpkg@v11
       id: runvcpkg
       with:
-        # Commit fixo para estabilidade
-        vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
-        # Aponta para o arquivo de manifesto na raiz
+        # Commit atualizado e estável
+        vcpkgGitCommitId: 81c8497f37cc4fc2749a9b69260d402325350920
         vcpkgJsonGlob: 'vcpkg.json'
 
     - name: Configure CMake (Manual)
-      # Nota: A action run-vcpkg define automaticamente a variável VCPKG_ROOT_O que usamos no toolchain file abaixo
       run: |
         cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
           -DCMAKE_BUILD_TYPE="Release" `
@@ -132,7 +134,7 @@ jobs:
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
+        vcpkgGitCommitId: 81c8497f37cc4fc2749a9b69260d402325350920
         vcpkgJsonGlob: 'vcpkg.json'
 
     - name: Build with CMake
@@ -177,7 +179,7 @@ jobs:
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
+        vcpkgGitCommitId: 81c8497f37cc4fc2749a9b69260d402325350920
         vcpkgJsonGlob: 'vcpkg.json'
 
     - name: Build with CMake
