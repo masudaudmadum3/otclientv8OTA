@@ -26,7 +26,6 @@ jobs:
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
         vcpkgTriplet: x64-windows-static
         vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
-        # Não passamos argumentos aqui. O vcpkg lerá o vcpkg.json automaticamente.
         vcpkgJsonGlob: 'vcpkg.json'
 
     - name: Configure CMake (Manual)
@@ -35,7 +34,8 @@ jobs:
           -DCMAKE_BUILD_TYPE="Release" `
           -DVERSION=${{github.run_number}} `
           -DCMAKE_TOOLCHAIN_FILE="${{ runner.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" `
-          -DVCPKG_TARGET_TRIPLET=x64-windows-static
+          -DVCPKG_TARGET_TRIPLET=x64-windows-static `
+          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
     - name: Build CMake (Manual)
       run: |
@@ -124,7 +124,7 @@ jobs:
       uses: lukka/run-cmake@v3
       with:
         buildDirectory: ${{ runner.workspace }}/build
-        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}}'
+        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} -DCMAKE_POLICY_VERSION_MINIMUM=3.5'
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
         useVcpkgToolchainFile: true
 
@@ -160,6 +160,10 @@ jobs:
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v11
       with:
+        vcpkgArguments: >
+          boost-iostreams boost-asio boost-system boost-variant boost-lockfree boost-beast glew 
+          boost-filesystem boost-uuid libogg libvorbis zlib opengl libzip openal-soft bzip2
+          boost-process openssl physfs
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
         vcpkgTriplet: x64-linux
         vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
@@ -169,7 +173,7 @@ jobs:
       uses: lukka/run-cmake@v3
       with:
         buildDirectory: ${{ runner.workspace }}/build
-        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}}'
+        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} -DCMAKE_POLICY_VERSION_MINIMUM=3.5'
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
         useVcpkgToolchainFile: true
 
