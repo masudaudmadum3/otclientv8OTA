@@ -13,44 +13,35 @@ jobs:
       with:
           submodules: recursive
 
-    - name: Setup MSBuild and add to PATH
-      uses: microsoft/setup-msbuild@v2
-      id: setup_msbuild
+    - name: Get latest CMake
+      uses: lukka/get-cmake@latest
 
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
-        vcpkgTriplet: x86-windows-static
-        # Commit atualizado (Jan 2024) para compatibilidade com VS2022
+        # Alterado para x64 para padronizar com Mac/Linux e CMake
+        vcpkgTriplet: x64-windows-static
         vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
         vcpkgArguments: >
           boost-iostreams boost-asio boost-beast boost-system boost-variant boost-lockfree boost-process boost-program-options boost-uuid boost-filesystem
           luajit glew physfs openal-soft libogg libvorbis zlib libzip bzip2 openssl
 
-    - name: Integrate vcpkg
-      run: |
-        ${{ runner.workspace }}/vcpkg/vcpkg integrate install
-       
-    - name: Compile otclient_dx
-      timeout-minutes: 20
-      run: |
-        cd vc16
-        MSBuild /property:Configuration=DirectX /p:BUILD_REVISION=${{github.run_number}}
-       
-    - name: Compile otclient_gl
-      timeout-minutes: 20
-      run: |
-        cd vc16
-        MSBuild /property:Configuration=OpenGL /p:BUILD_REVISION=${{github.run_number}}
+    - name: Build with CMake
+      uses: lukka/run-cmake@v3
+      with:
+        buildDirectory: ${{ runner.workspace }}/build
+        # Compila em Release usando Ninja
+        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}}'
+        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+        useVcpkgToolchainFile: true
 
     - name: Upload binaries
       uses: actions/upload-artifact@v4
       with:
         name: binaries-windows
         path: |
-          otclient_gl.exe
-          otclient_dx.exe
+          ${{ runner.workspace }}/build/otclient.exe
         if-no-files-found: error
 
   Android:
@@ -124,7 +115,6 @@ jobs:
           boost-process openssl
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
         vcpkgTriplet: x64-osx
-        # Commit atualizado
         vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
 
     - name: Build with CMake
@@ -173,7 +163,6 @@ jobs:
           boost-process openssl physfs
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
         vcpkgTriplet: x64-linux
-        # Commit atualizado
         vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
 
     - name: Build with CMake
