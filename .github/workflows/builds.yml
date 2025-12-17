@@ -14,15 +14,16 @@ jobs:
           submodules: recursive
 
     - name: Setup MSBuild and add to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v2
       id: setup_msbuild
 
     - name: Run vcpkg
-      uses: lukka/run-vcpkg@v7
+      uses: lukka/run-vcpkg@v11
       with:
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
         vcpkgTriplet: x86-windows-static
-        vcpkgGitCommitId: 3b3bd424827a1f7f4813216f6b32b6c61e386b2e
+        # Commit atualizado (Jan 2024) para compatibilidade com VS2022
+        vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
         vcpkgArguments: >
           boost-iostreams boost-asio boost-beast boost-system boost-variant boost-lockfree boost-process boost-program-options boost-uuid boost-filesystem
           luajit glew physfs openal-soft libogg libvorbis zlib libzip bzip2 openssl
@@ -64,7 +65,7 @@ jobs:
           submodules: recursive
 
     - name: Setup MSBuild and add to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v2
       id: setup_msbuild
 
     - name: Create data.zip for android
@@ -77,17 +78,16 @@ jobs:
 
     - name: Install android
       run: |
-        $sdkRoot = "C:\Android\android-sdk"
+        $sdkRoot = $env:ANDROID_SDK_ROOT
         $sdkManager = "$sdkRoot\cmdline-tools\latest\bin\sdkmanager.bat"
-        Install-AndroidSDKPackages -AndroidSDKManagerPath $sdkManager `
-                                  -AndroidSDKRootPath $sdkRoot `
-                                  -AndroidPackages "ndk;21.4.7075529"
+        Write-Host "Using SDK Manager at: $sdkManager"
+        echo "y" | & $sdkManager "ndk;21.4.7075529"
 
     - name: Build for android
       timeout-minutes: 25
       run: |
         cd android
-        $env:VS_NdkRoot="C:\Android\android-sdk\ndk\21.4.7075529"
+        $env:VS_NdkRoot="$env:ANDROID_SDK_ROOT\ndk\21.4.7075529"
         MSBuild.exe /p:Configuration=Release /p:Platform="ARM64" /p:BUILD_REVISION=${{github.run_number}}
 
     - name: Upload binaries
@@ -116,7 +116,7 @@ jobs:
       run: brew install physfs pkgconfig luajit xquartz
 
     - name: Run vcpkg
-      uses: lukka/run-vcpkg@v7
+      uses: lukka/run-vcpkg@v11
       with:
         vcpkgArguments: >
           boost-iostreams boost-asio boost-system boost-variant boost-lockfree boost-beast glew 
@@ -124,7 +124,8 @@ jobs:
           boost-process openssl
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
         vcpkgTriplet: x64-osx
-        vcpkgGitCommitId: 761c81d43335a5d5ccc2ec8ad90bd7e2cbba734e
+        # Commit atualizado
+        vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
 
     - name: Build with CMake
       uses: lukka/run-cmake@v3
@@ -164,7 +165,7 @@ jobs:
       run: sudo apt update && sudo apt install -y libglew-dev liblua5.1-0-dev libluajit-5.1-dev
 
     - name: Run vcpkg
-      uses: lukka/run-vcpkg@v7
+      uses: lukka/run-vcpkg@v11
       with:
         vcpkgArguments: >
           boost-iostreams boost-asio boost-system boost-variant boost-lockfree boost-beast glew 
@@ -172,7 +173,8 @@ jobs:
           boost-process openssl physfs
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
         vcpkgTriplet: x64-linux
-        vcpkgGitCommitId: 761c81d43335a5d5ccc2ec8ad90bd7e2cbba734e
+        # Commit atualizado
+        vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
 
     - name: Build with CMake
       uses: lukka/run-cmake@v3
