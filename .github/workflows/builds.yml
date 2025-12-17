@@ -45,7 +45,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: binaries-windows
-        # O executável compilado estará aqui
         path: |
           build/Release/otclient.exe
         if-no-files-found: error
@@ -85,7 +84,8 @@ jobs:
       run: |
         cd android
         $env:VS_NdkRoot="$env:ANDROID_SDK_ROOT\ndk\21.4.7075529"
-        MSBuild.exe /p:Configuration=Release /p:Platform="ARM64" /p:BUILD_REVISION=${{github.run_number}}
+        # Added /p:WarningLevel=0 to attempt to suppress warnings
+        MSBuild.exe /p:Configuration=Release /p:Platform="ARM64" /p:BUILD_REVISION=${{github.run_number}} /p:WarningLevel=0
 
     - name: Upload binaries
       uses: actions/upload-artifact@v4
@@ -124,7 +124,7 @@ jobs:
       uses: lukka/run-cmake@v3
       with:
         buildDirectory: ${{ runner.workspace }}/build
-        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} -DCMAKE_POLICY_VERSION_MINIMUM=3.5'
+        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -Wno-dev'
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
         useVcpkgToolchainFile: true
 
@@ -160,10 +160,6 @@ jobs:
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgArguments: >
-          boost-iostreams boost-asio boost-system boost-variant boost-lockfree boost-beast glew 
-          boost-filesystem boost-uuid libogg libvorbis zlib opengl libzip openal-soft bzip2
-          boost-process openssl physfs
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
         vcpkgTriplet: x64-linux
         vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
@@ -173,7 +169,7 @@ jobs:
       uses: lukka/run-cmake@v3
       with:
         buildDirectory: ${{ runner.workspace }}/build
-        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} -DCMAKE_POLICY_VERSION_MINIMUM=3.5'
+        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -Wno-dev'
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
         useVcpkgToolchainFile: true
 
