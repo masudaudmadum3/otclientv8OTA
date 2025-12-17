@@ -6,6 +6,9 @@ jobs:
     name: Build windows version
     runs-on: windows-2022
     timeout-minutes: 120
+    env:
+      # Define o triplet padrão via variável de ambiente (substitui o input antigo)
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static
 
     steps:
     - name: Checkout
@@ -16,29 +19,25 @@ jobs:
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
 
-    # SUBSTITUÍDO: setup-msbuild por msvc-dev-cmd
-    # Isso configura as variáveis de ambiente (LIB, INCLUDE) necessárias para o Vcpkg/Ninja compilarem o GLEW
-    - name: Setup MSVC Developer Command Prompt
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
 
     - name: Run vcpkg (Manifest Mode)
       uses: lukka/run-vcpkg@v11
       id: runvcpkg
       with:
-        vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
-        vcpkgTriplet: x64-windows-static
-        # Commit atualizado (Ago 2024) para melhor compatibilidade com VS2022 e GLEW
-        vcpkgGitCommitId: 81c8497f37cc4fc2749a9b69260d402325350920
+        # Commit fixo para estabilidade
+        vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
+        # Aponta para o arquivo de manifesto na raiz
         vcpkgJsonGlob: 'vcpkg.json'
 
     - name: Configure CMake (Manual)
+      # Nota: A action run-vcpkg define automaticamente a variável VCPKG_ROOT_O que usamos no toolchain file abaixo
       run: |
         cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
           -DCMAKE_BUILD_TYPE="Release" `
           -DVERSION=${{github.run_number}} `
-          -DCMAKE_TOOLCHAIN_FILE="${{ runner.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" `
+          -DCMAKE_TOOLCHAIN_FILE="${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}/scripts/buildsystems/vcpkg.cmake" `
           -DVCPKG_TARGET_TRIPLET=x64-windows-static `
           "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 
@@ -115,6 +114,8 @@ jobs:
     name: Build mac os version
     runs-on: macos-11
     timeout-minutes: 120
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-osx
 
     steps:
     - name: Checkout
@@ -131,9 +132,7 @@ jobs:
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
-        vcpkgTriplet: x64-osx
-        vcpkgGitCommitId: 81c8497f37cc4fc2749a9b69260d402325350920
+        vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
         vcpkgJsonGlob: 'vcpkg.json'
 
     - name: Build with CMake
@@ -160,6 +159,8 @@ jobs:
     name: Build linux version
     runs-on: ubuntu-20.04
     timeout-minutes: 120
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-linux
 
     steps:
     - name: Checkout
@@ -176,9 +177,7 @@ jobs:
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
-        vcpkgTriplet: x64-linux
-        vcpkgGitCommitId: 81c8497f37cc4fc2749a9b69260d402325350920
+        vcpkgGitCommitId: 5e5d0e1cd7785623065e77eff011afdeec1a3574
         vcpkgJsonGlob: 'vcpkg.json'
 
     - name: Build with CMake
