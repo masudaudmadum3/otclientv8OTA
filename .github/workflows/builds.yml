@@ -29,6 +29,7 @@ jobs:
         vcpkgJsonGlob: 'vcpkg.json'
 
     - name: Configure CMake (Manual)
+      # Adicionado aspas no 3.5 para corrigir o erro "Ignoring extra path"
       run: |
         cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
           -DCMAKE_BUILD_TYPE="Release" `
@@ -79,12 +80,28 @@ jobs:
         Write-Host "Using SDK Manager at: $sdkManager"
         echo "y" | & $sdkManager "ndk;21.4.7075529"
 
+    # --- PASSO NOVO: INJEÇÃO PARA REMOVER WARNINGS ---
+    - name: Suppress Android Warnings
+      run: |
+        $vcxproj = "android\otclientv8_lib\otclientv8_lib.vcxproj"
+        if (Test-Path $vcxproj) {
+            Write-Host "Patching $vcxproj to disable warnings..."
+            $content = Get-Content $vcxproj -Raw
+            # Injeta a flag -w (Disable All Warnings) dentro da tag ClCompile
+            # Também adiciona flag para ignorar warnings de argumentos não usados
+            $content = $content -replace '</ClCompile>', '<AdditionalOptions>-w -Wno-unused-command-line-argument %(AdditionalOptions)</AdditionalOptions></ClCompile>'
+            Set-Content -Path $vcxproj -Value $content
+        } else {
+            Write-Warning "Could not find project file to patch. Warnings might persist."
+        }
+
     - name: Build for android
       timeout-minutes: 25
       run: |
         cd android
         $env:VS_NdkRoot="$env:ANDROID_SDK_ROOT\ndk\21.4.7075529"
-        MSBuild.exe /p:Configuration=Release /p:Platform="ARM64" /p:BUILD_REVISION=${{github.run_number}} /p:WarningLevel=0
+        # O parâmetro /v:q (quiet) reduz o barulho do MSBuild
+        MSBuild.exe /p:Configuration=Release /p:Platform="ARM64" /p:BUILD_REVISION=${{github.run_number}} /v:q
 
     - name: Upload binaries
       uses: actions/upload-artifact@v4
@@ -123,8 +140,8 @@ jobs:
       uses: lukka/run-cmake@v3
       with:
         buildDirectory: ${{ runner.workspace }}/build
-        # Adicionado aspas no 3.5 aqui também por segurança
-        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" -Wno-dev'
+        # Adicionado aspas no 3.5 e -w para suprimir warnings
+        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" -w -Wno-dev'
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
         useVcpkgToolchainFile: true
 
@@ -169,8 +186,8 @@ jobs:
       uses: lukka/run-cmake@v3
       with:
         buildDirectory: ${{ runner.workspace }}/build
-        # Adicionado aspas no 3.5 aqui também por segurança
-        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" -Wno-dev'
+        # Adicionado aspas no 3.5 e -w para suprimir warnings
+        cmakeAppendedArgs: '-G Ninja -DCMAKE_BUILD_TYPE="Release" -DVERSION=${{github.run_number}} "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" -w -Wno-dev'
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
         useVcpkgToolchainFile: true
 
