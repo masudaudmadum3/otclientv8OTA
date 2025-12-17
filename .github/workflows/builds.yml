@@ -7,7 +7,6 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 120
     env:
-      # Define o triplet padrão via variável de ambiente (obrigatório para run-vcpkg@v11)
       VCPKG_DEFAULT_TRIPLET: x64-windows-static
 
     steps:
@@ -19,8 +18,6 @@ jobs:
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
 
-    # SUBSTITUIÇÃO CRUCIAL: setup-msbuild -> msvc-dev-cmd
-    # Isso coloca o cl.exe e link.exe no PATH, permitindo que o Vcpkg compile o GLEW com Ninja
     - name: Setup MSVC Developer Command Prompt
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -30,7 +27,8 @@ jobs:
       uses: lukka/run-vcpkg@v11
       id: runvcpkg
       with:
-        # Commit atualizado e estável
+        # CORREÇÃO: Instala o vcpkg FORA do diretório do projeto para evitar erros de git
+        vcpkgDirectory: ${{ runner.workspace }}/vcpkg
         vcpkgGitCommitId: 81c8497f37cc4fc2749a9b69260d402325350920
         vcpkgJsonGlob: 'vcpkg.json'
 
@@ -134,6 +132,8 @@ jobs:
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v11
       with:
+        # CORREÇÃO: Instala fora do repo
+        vcpkgDirectory: ${{ runner.workspace }}/vcpkg
         vcpkgGitCommitId: 81c8497f37cc4fc2749a9b69260d402325350920
         vcpkgJsonGlob: 'vcpkg.json'
 
@@ -179,6 +179,8 @@ jobs:
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v11
       with:
+        # CORREÇÃO: Instala fora do repo
+        vcpkgDirectory: ${{ runner.workspace }}/vcpkg
         vcpkgGitCommitId: 81c8497f37cc4fc2749a9b69260d402325350920
         vcpkgJsonGlob: 'vcpkg.json'
 
